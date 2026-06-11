@@ -254,7 +254,7 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
                     print("\n[ITER {}] Saving Gaussians".format(iteration))
 
                     saving_path = os.path.join(scene.model_path, f"iter_{iteration}")                    
-                    scene.render_evaluate_dycheck(saving_path, gaussians, pipe, background)
+                    scene.render_evaluate_sora(saving_path, gaussians, pipe, background)
                     # scene.render_train(saving_path, gaussians, pipe, background)
                     
                     
@@ -368,12 +368,15 @@ if __name__ == "__main__":
     parser.add_argument("--exhaust_test", action="store_true")
     network_gui_websocket.init("127.0.0.1", 6119) # make sure to forward this port on the code IDE
     args = parser.parse_args(sys.argv[1:])
-    # cfg_dir, specfiy training parameter for optimization
-    cfg_path    = "Instant4D/configs/sora/panda.yaml"
+    # Paths are env-overridable so the same script drives any scene from the
+    # justfile / pytest. Defaults are relative to the repo root (run from there).
+    scene_name  = os.environ.get("I4D_SCENE", "panda")
+    # cfg_dir, specify training parameter for optimization
+    cfg_path    = os.environ.get("I4D_CONFIG", f"configs/sora/{scene_name}.yaml")
     # source_dir, specify the pruning results from geometry recovery
-    source_path = "Instant4D/example/panda" 
+    source_path = os.environ.get("I4D_SOURCE", f"example/{scene_name}")
     # model_dir, the place we save visualization
-    model_path  = "Instant4D/example/panda"
+    model_path  = os.environ.get("I4D_MODEL", f"example/{scene_name}")
 
 
 

@@ -39,3 +39,45 @@ eggs/
 *.egg
 
 fourth_party/DynamicNeRF
+
+# ---- uv / Blackwell(sm_120) setup (added for this environment) ----
+.venv/
+uv.lock
+.python-version
+
+# logs & scratch from setup/build
+logs/
+downloads/
+*.output
+
+# model checkpoints (downloaded separately, can be multi-GB)
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+checkpoints/
+!**/checkpoints/.gitkeep
+
+# pipeline intermediate / output artifacts
+SLAM/medium/
+SLAM/voxel_filter/
+SLAM/mega-sam/medium/
+SLAM/mega-sam/cache_flow/
+SLAM/mega-sam/outputs/
+SLAM/mega-sam/outputs_cvd/
+SLAM/mega-sam/reconstructions/
+output/
+example/**/filtered_cvd.npz
+example/**/transforms_*.json
+example/**/sparse/
+
+# compiled CUDA extension build trees
+**/build/
+**/*.egg-info/
+**/dist/
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+test-results/

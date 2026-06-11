@@ -6,6 +6,17 @@
 
 
 
+> **Running on NVIDIA Blackwell (RTX PRO / RTX 50-series, sm_120)?**
+> This checkout is set up to build & run under **uv** with CUDA 12.8 + PyTorch
+> 2.8.0+cu128 (the README's conda + `cu126` flow does **not** work on sm_120).
+> See [`docs/BLACKWELL_SETUP.md`](docs/BLACKWELL_SETUP.md) and the `justfile`:
+> ```bash
+> just setup && just cuda-toolkit && just download-models
+> just build-ext && just build-megasam && just install-reconstruct-deps
+> just pipeline panda      # reconstruct -> prune -> optimize
+> just test                # pytest regression suite
+> ```
+
 ## Installation
 
 Clone the repository with the submodules by using:

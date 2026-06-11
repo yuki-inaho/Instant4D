@@ -83,10 +83,19 @@ async def websocket_server(host, port):
         await asyncio.Future()  
                 
 def run_asyncio_loop(wish_host, wish_port):
-    asyncio.run(websocket_server(wish_host, wish_port))
+    try:
+        asyncio.run(websocket_server(wish_host, wish_port))
+    except OSError as e:
+        # port already in use / unavailable — viewer is optional, keep training
+        print(f"[network_gui_websocket] disabled: {e}")
 
 def init(wish_host, wish_port):
-    thread = threading.Thread(target=run_asyncio_loop,args=[wish_host, wish_port])
+    # Opt out entirely for headless / automated runs (pytest, CI).
+    import os
+    if os.environ.get("I4D_NO_WEBSOCKET"):
+        return
+    # daemon=True so the listener never blocks process exit after training.
+    thread = threading.Thread(target=run_asyncio_loop, args=[wish_host, wish_port], daemon=True)
     thread.start()
 
 

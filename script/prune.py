@@ -99,7 +99,9 @@ def read_droid_data(droid_path, motion_path, save_dir):
     
     
 
-    return depth, color, resized_motion.reshape(-1, 1), intrinsic, cam_c2w
+    # keep motion per-frame (B,H,W) so the [::3] frame subsampling in
+    # voxel_filter stays consistent with color/depth for any frame count
+    return depth, color, resized_motion, intrinsic, cam_c2w
 
 def process_data(depth, color, motion_prob, intrinsic, cam_c2w):
     B, H, W = depth.shape
@@ -172,7 +174,7 @@ def make_transforms(intrinsic, cam_c2w, save_dir, scene ,W):
     train_frame = []
     for i in selected:
         frame_dict = {
-            "file_path": f"{dycheck_path}/{scene}/{i+1:05d}",
+            "file_path": f"{i+1:05d}",  # relative to source_path (the scene image dir)
             "transform_matrix": cam_c2w[i].tolist(),
             "time": i/(B-1)*3
         }
@@ -187,7 +189,7 @@ def make_transforms(intrinsic, cam_c2w, save_dir, scene ,W):
     test_frame = []
     for i in remaining:
         frame_dict = {
-            "file_path": f"{dycheck_path}/{scene}/{i+1:05d}",
+            "file_path": f"{i+1:05d}",  # relative to source_path (the scene image dir)
             "transform_matrix": cam_c2w[i].tolist(),
             "time": i/(B-1)*3
         }
@@ -212,8 +214,9 @@ def voxel_filter(droid_path, motion_path, save_dir, scene, use_mask=False):
     depth = depth[::3]
     cam_c2w = cam_c2w[::3]
     motion_prob = motion_prob[::3]
-    
-    motion_prob = np.concatenate(motion_prob, axis=0)
+
+    # flatten per-pixel to match xyz = back_project(depth).reshape(-1, 3)
+    motion_prob = motion_prob.reshape(-1)
     motion_prob = motion_prob.astype(np.float32)
     
     print(f"motion_prob shape: {motion_prob.shape}")
@@ -282,13 +285,16 @@ def voxel_filter(droid_path, motion_path, save_dir, scene, use_mask=False):
 if __name__ == "__main__":
     
 
-    scene_list = [ "pizza","einstein"]
+    # Env-overridable so the justfile / pipeline can drive any scene.
+    # save_dir defaults to "example" so filtered_cvd.npz + transforms land in
+    # example/<scene>/ — exactly where script/optimize.py reads the scene from.
+    scene_list = os.environ.get("I4D_SCENES", "panda").split(",")
 
-    droid_dir = "Instant4D/SLAM/mega-sam/outputs_cvd"
-    motion_dir_msam = "Instant4D/SLAM/mega-sam/reconstructions"
-    save_dir = "Instant4D/SLAM/voxel_filter/output/sora"
-    
-    
+    droid_dir = os.environ.get("I4D_DROID_DIR", "SLAM/mega-sam/outputs_cvd")
+    motion_dir_msam = os.environ.get("I4D_MOTION_DIR", "SLAM/mega-sam/reconstructions")
+    save_dir = os.environ.get("I4D_SAVE_DIR", "example")
+
+
     for scene in scene_list:
         droid_path = f"{droid_dir}/{scene}_sgd_cvd_hr.npz"
         motion_path = f"{motion_dir_msam}/{scene}/motion_prob.npy"

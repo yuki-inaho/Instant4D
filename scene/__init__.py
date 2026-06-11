@@ -308,7 +308,9 @@ class Scene:
                 height, width = video_frames[0].shape[:2]
                 video_path = os.path.join(path, "test", f"novel_view_{variant['name']}.mp4")
                 
-                fourcc = cv2.VideoWriter_fourcc(*'avc1')
+                # 'mp4v' (MPEG-4 Part 2) is encodable by opencv-python-headless's
+                # bundled ffmpeg; 'avc1'/H264 is not (no bundled H264 encoder).
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                 out = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
                 
                 for frame in video_frames:

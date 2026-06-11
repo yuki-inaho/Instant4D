@@ -281,7 +281,7 @@ def readCamerasFromTransforms(path, transformsfile, white_background, extension=
         R = np.transpose(w2c[:3,:3])  # R is stored transposed due to 'glm' in CUDA code
         T = w2c[:3, 3]
 
-        image_path = os.path.join(path, cam_name) # .replace('hdImgs_unditorted', 'hdImgs_unditorted_rgba').replace('.jpg', '.png')
+        image_path = cam_name  # cam_name already includes `path` (avoids double-join for relative file_path)
         image_name = Path(cam_name).stem
         
         if not dataloader:
@@ -294,9 +294,9 @@ def readCamerasFromTransforms(path, transformsfile, white_background, extension=
             arr = norm_data[:,:,:3] * norm_data[:, :, 3:4] + bg * (1 - norm_data[:, :, 3:4])
             if norm_data[:, :, 3:4].min() < 1:
                 arr = np.concatenate([arr, norm_data[:, :, 3:4]], axis=2)
-                image = Image.fromarray(np.array(arr*255.0, dtype=np.byte), "RGBA")
+                image = Image.fromarray(np.array(arr*255.0, dtype=np.uint8), "RGBA")
             else:
-                image = Image.fromarray(np.array(arr*255.0, dtype=np.byte), "RGB")
+                image = Image.fromarray(np.array(arr*255.0, dtype=np.uint8), "RGB")
 
             width, height = image.size[0], image.size[1]
         else:
@@ -381,7 +381,7 @@ def readCamerasFromCutter(path, transformsfile, white_background, extension=".pn
         R = np.transpose(w2c[:3,:3])  # R is stored transposed due to 'glm' in CUDA code
         T = w2c[:3, 3]
 
-        image_path = os.path.join(path, cam_name) # .replace('hdImgs_unditorted', 'hdImgs_unditorted_rgba').replace('.jpg', '.png')
+        image_path = cam_name  # cam_name already includes `path` (avoids double-join for relative file_path)
         image_name = Path(cam_name).stem
         if not dataloader:
             with Image.open(image_path) as image_load:
@@ -393,9 +393,9 @@ def readCamerasFromCutter(path, transformsfile, white_background, extension=".pn
             arr = norm_data[:,:,:3] * norm_data[:, :, 3:4] + bg * (1 - norm_data[:, :, 3:4])
             if norm_data[:, :, 3:4].min() < 1:
                 arr = np.concatenate([arr, norm_data[:, :, 3:4]], axis=2)
-                image = Image.fromarray(np.array(arr*255.0, dtype=np.byte), "RGBA")
+                image = Image.fromarray(np.array(arr*255.0, dtype=np.uint8), "RGBA")
             else:
-                image = Image.fromarray(np.array(arr*255.0, dtype=np.byte), "RGB")
+                image = Image.fromarray(np.array(arr*255.0, dtype=np.uint8), "RGB")
 
             width, height = image.size[0], image.size[1]
         else:
