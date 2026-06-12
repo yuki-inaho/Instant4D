@@ -95,6 +95,19 @@ The smoke config keeps the output under
 limits training to 20 iterations. For longer runs, copy the config and increase
 `OptimizationParams.iterations` and `position_lr_max_steps`.
 
+For a longer full-resolution local run on the same 501-frame VGGT/GlueMap
+COLMAP scene:
+
+```bash
+uv run python -m script.optimize \
+  --config configs/local/tva_nyx650_vggt_colmap_fullish.yaml \
+  --save_iterations 1000 2000 3000 \
+  --test_iterations 999999
+```
+
+This writes checkpoints such as
+`output/tva_nyx650_0501_vggt_colmap_fullish/chkpnt3000.pth`.
+
 ## Notes
 
 - The repository currently has no `docs/` directory on `main`; this document is
