@@ -108,6 +108,21 @@ uv run python -m script.optimize \
 This writes checkpoints such as
 `output/tva_nyx650_0501_vggt_colmap_fullish/chkpnt3000.pth`.
 
+Render a checkpoint back onto the original COLMAP camera trajectory and write
+per-frame PSNR:
+
+```bash
+uv run python -m script.render_colmap_trajectory \
+  --config configs/local/tva_nyx650_vggt_colmap_fullish.yaml \
+  --iteration 3000 \
+  --save_gt
+```
+
+The default output is
+`output/tva_nyx650_0501_vggt_colmap_fullish/chkpnt3000_trajectory/`, including
+`renders/`, `gt/`, `metrics.csv`, `metrics_summary.json`, and
+`reconstruction.mp4`.
+
 ## Notes
 
 - The repository currently has no `docs/` directory on `main`; this document is
