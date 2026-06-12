@@ -15,6 +15,21 @@ git clone --recursive git@github.com:Zhanpeng1202/Instant4D.git
 
 ### Environment
 
+#### uv setup
+
+This branch includes a uv environment for this RTX 4000 Ada workstation
+(Python 3.10, PyTorch CUDA 11.8, local CUDA toolkit 11.8):
+
+```shell
+script/setup_uv.sh
+script/build_cuda_extensions.sh
+```
+
+See [docs/uv_setup.md](docs/uv_setup.md) for dependency groups, CUDA extension
+build notes, and Mega-SAM/UniDepth usage.
+
+#### conda setup
+
 Update requirements.txt with correct CUDA version for PyTorch and cuUML, i.e., replacing cu126 and cu12 with your CUDA version.
 ```shell
 conda create -n instant4d python=3.10

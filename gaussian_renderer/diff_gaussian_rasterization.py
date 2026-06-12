@@ -14,7 +14,11 @@ import torch.nn as nn
 import torch
 # from . import _C
 import os
+from utils.cuda_env import configure_cuda_extension_build
 from torch.utils.cpp_extension import load
+
+configure_cuda_extension_build()
+
 parent_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "diff-gaussian-rasterization")
 _C = load(
     name='diff_gaussian_rasterization',
@@ -313,4 +317,3 @@ class GaussianRasterizer(nn.Module):
             cov3D_precomp,
             raster_settings,
         )
-
