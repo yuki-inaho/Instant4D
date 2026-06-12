@@ -76,6 +76,36 @@ def getNerfppNorm(cam_info):
 
     return {"translate": translate, "radius": radius}
 
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".PNG", ".JPG", ".JPEG")
+
+def resolve_colmap_image_path(images_folder, colmap_image_name):
+    image_name = colmap_image_name.replace("\\", "/")
+    candidate_names = [image_name, os.path.basename(image_name)]
+    candidates = []
+
+    for candidate_name in dict.fromkeys(candidate_names):
+        base_path = Path(candidate_name)
+        if not base_path.is_absolute():
+            base_path = Path(images_folder) / base_path
+        candidates.append(base_path)
+
+        if base_path.suffix:
+            for suffix in IMAGE_EXTENSIONS:
+                candidates.append(base_path.with_suffix(suffix))
+        else:
+            for suffix in IMAGE_EXTENSIONS:
+                candidates.append(Path(f"{base_path}{suffix}"))
+
+    for candidate in dict.fromkeys(candidates):
+        if candidate.exists():
+            return str(candidate)
+
+    tried_paths = ", ".join(str(path) for path in dict.fromkeys(candidates))
+    raise FileNotFoundError(
+        f"Could not find COLMAP image {colmap_image_name!r} in {images_folder!r}. "
+        f"Tried: {tried_paths}"
+    )
+
 def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
     cam_infos = []
     for idx, key in enumerate(cam_extrinsics):
@@ -96,8 +126,7 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
 
 
 
-        # image_path = os.path.join(images_folder, os.path.basename(extr.name))
-        image_path = os.path.join(images_folder, os.path.basename(extr.name).replace("jpg", "png"))
+        image_path = resolve_colmap_image_path(images_folder, extr.name)
         image_name = os.path.basename(image_path).split(".")[0]
         image = Image.open(image_path)
 

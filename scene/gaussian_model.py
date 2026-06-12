@@ -281,18 +281,25 @@ class GaussianModel:
         features = torch.zeros((fused_color.shape[0], 3, self.get_max_sh_channels)).float().cuda()
         features[:, :3, 0 ] = fused_color
         features[:, 3:, 1:] = 0.0
+        point_count = fused_point_cloud.shape[0]
         
-        print(f"dtype of pcd.motion: {type(pcd.motion)}")
-        motion_probability = torch.tensor(np.asarray(pcd.motion)).float().cuda()
+        if pcd.motion is None:
+            motion_probability = torch.zeros(point_count, device="cuda")
+        else:
+            motion_probability = torch.as_tensor(np.asarray(pcd.motion), dtype=torch.float32, device="cuda").reshape(-1)
+            if motion_probability.numel() == 1:
+                motion_probability = motion_probability.repeat(point_count)
+            elif motion_probability.numel() != point_count:
+                raise ValueError(f"Expected {point_count} motion values, got {motion_probability.numel()}")
         self.motion = nn.Parameter(motion_probability.requires_grad_(True))
         
         if self.gaussian_dim == 4:
             if pcd.time is None:
-                fused_times = (torch.rand(fused_point_cloud.shape[0], 1, device="cuda") * 1.2 - 0.1) * (self.time_duration[1] - self.time_duration[0]) + self.time_duration[0]
+                fused_times = (torch.rand(point_count, 1, device="cuda") * 1.2 - 0.1) * (self.time_duration[1] - self.time_duration[0]) + self.time_duration[0]
             else:
                 # fused_times = (torch.rand(fused_point_cloud.shape[0], 1, device="cuda") * 1.2 - 0.1) * (self.time_duration[1] - self.time_duration[0]) + self.time_duration[0]
                 
-                fused_times = torch.from_numpy(pcd.time).unsqueeze(1).cuda().float()
+                fused_times = torch.as_tensor(np.asarray(pcd.time), dtype=torch.float32, device="cuda").reshape(-1, 1)
             
         print("Number of points at initialisation : ", fused_point_cloud.shape[0])
 
@@ -303,7 +310,15 @@ class GaussianModel:
         if self.gaussian_dim == 4:
             # dist_t = torch.clamp_min(distCUDA2(fused_times.repeat(1,3)), 1e-10)[...,None]
             # dist_t = torch.zeros_like(fused_times, device="cuda") + (self.time_duration[1] - self.time_duration[0]) / 5
-            dist_t = torch.tensor(pcd.scale_t).unsqueeze(1).float().cuda()
+            if pcd.scale_t is None:
+                default_scale_t = max((self.time_duration[1] - self.time_duration[0]) / 5, 1e-4)
+                dist_t = torch.full((point_count, 1), default_scale_t, dtype=torch.float32, device="cuda")
+            else:
+                dist_t = torch.as_tensor(np.asarray(pcd.scale_t), dtype=torch.float32, device="cuda").reshape(-1, 1)
+                if dist_t.shape[0] == 1:
+                    dist_t = dist_t.repeat(point_count, 1)
+                elif dist_t.shape[0] != point_count:
+                    raise ValueError(f"Expected {point_count} temporal scale values, got {dist_t.shape[0]}")
             scales_t = torch.log(torch.sqrt(dist_t))
             if self.rot_4d:
                 rots_r = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")

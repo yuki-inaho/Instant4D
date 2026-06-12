@@ -283,6 +283,8 @@ def training(dataset, opt, pipe, testing_iterations, saving_iterations, checkpoi
     
     with open(os.path.join(scene.model_path, "evaluation_metrics.json"), "w") as f:
         json.dump(scene.evaluation_metrics, f)
+    if tb_writer:
+        tb_writer.close()
     
     
 def prepare_output_and_logger(args):    
@@ -343,6 +345,37 @@ def setup_seed(seed):
      random.seed(seed)
      torch.backends.cudnn.deterministic = True
 
+def merge_config_into_args(args, cfg):
+    def recursive_merge(key, host):
+        value = host[key]
+        if isinstance(value, DictConfig):
+            for nested_key in value.keys():
+                recursive_merge(nested_key, value)
+        else:
+            assert hasattr(args, key), key
+            if OmegaConf.is_config(value):
+                value = OmegaConf.to_container(value, resolve=True)
+            setattr(args, key, value)
+
+    for key in cfg.keys():
+        recursive_merge(key, cfg)
+
+def provided_cli_dests(parser, argv):
+    option_to_dest = {}
+    for action in parser._actions:
+        for option in action.option_strings:
+            option_to_dest[option] = action.dest
+
+    provided = set()
+    for token in argv:
+        if not token.startswith("-"):
+            continue
+        option = token.split("=", 1)[0]
+        dest = option_to_dest.get(option)
+        if dest:
+            provided.add(dest)
+    return provided
+
 if __name__ == "__main__":
     # Set up command line argument parser
     parser = ArgumentParser(description="Training script parameters")
@@ -367,29 +400,20 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=6666)
     parser.add_argument("--exhaust_test", action="store_true")
     network_gui_websocket.init("127.0.0.1", 6119) # make sure to forward this port on the code IDE
-    args = parser.parse_args(sys.argv[1:])
-    # cfg_dir, specfiy training parameter for optimization
-    cfg_path    = "Instant4D/configs/sora/panda.yaml"
-    # source_dir, specify the pruning results from geometry recovery
-    source_path = "Instant4D/example/panda" 
-    # model_dir, the place we save visualization
-    model_path  = "Instant4D/example/panda"
+    argv = sys.argv[1:]
+    args = parser.parse_args(argv)
+    cli_values = vars(args).copy()
+    cli_provided = provided_cli_dests(parser, argv)
 
-
-
+    cfg_path = args.config or "configs/sora/panda.yaml"
     args.config = cfg_path
     cfg = OmegaConf.load(args.config)
-    
-    # a nasty fix for a bug during development
-    def recursive_merge(key, host):
-        if isinstance(host[key], DictConfig):
-            for key1 in host[key].keys():
-                recursive_merge(key1, host[key])
-        else:
-            assert hasattr(args, key), key
-            setattr(args, key, host[key])
-    for k in cfg.keys():
-        recursive_merge(k, cfg)
+    merge_config_into_args(args, cfg)
+    args.config = cfg_path
+
+    for key in cli_provided:
+        if key != "config":
+            setattr(args, key, cli_values[key])
             
 
     setup_seed(args.seed)
@@ -403,8 +427,6 @@ if __name__ == "__main__":
     lp_ = lp.extract(args)
     op_ = op.extract(args)
     pp_ = pp.extract(args)
-    lp_.source_path = source_path
-    lp_.model_path  = model_path
 
 
     torch.autograd.set_detect_anomaly(args.detect_anomaly)

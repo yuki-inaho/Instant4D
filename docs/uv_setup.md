@@ -65,6 +65,36 @@ PYTHONPATH="$PWD/SLAM/mega-sam/UniDepth:$PYTHONPATH" \
   uv run python SLAM/mega-sam/UniDepth/scripts/demo_mega-sam.py --help
 ```
 
+## Run the TVA NYX650 VGGT/GlueMap COLMAP smoke test
+
+The local 501-frame reconstruction can be used as a COLMAP scene by linking the
+source images and the VGGT/GlueMap sparse model into an ignored `data/`
+directory:
+
+```bash
+mkdir -p data/tva_nyx650_0501_vggt_colmap/sparse/0
+ln -sfn /home/kasm-user/Desktop/TVA_NYX650_2026_06_04_colmap_0501/images \
+  data/tva_nyx650_0501_vggt_colmap/images
+for name in cameras images points3D frames rigs; do
+  ln -sfn /home/kasm-user/Desktop/TVA_NYX650_2026_06_04_colmap_0501/gluemap_vggt_result/gluemap_aba/$name.bin \
+    data/tva_nyx650_0501_vggt_colmap/sparse/0/$name.bin
+done
+```
+
+Run a short end-to-end Instant4D smoke test:
+
+```bash
+uv run python -m script.optimize \
+  --config configs/local/tva_nyx650_vggt_colmap_smoke.yaml \
+  --test_iterations 999999 \
+  --save_iterations 999999
+```
+
+The smoke config keeps the output under
+`output/tva_nyx650_0501_vggt_colmap_smoke`, uses the original JPG frames, and
+limits training to 20 iterations. For longer runs, copy the config and increase
+`OptimizationParams.iterations` and `position_lr_max_steps`.
+
 ## Notes
 
 - The repository currently has no `docs/` directory on `main`; this document is
