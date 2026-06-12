@@ -123,6 +123,33 @@ The default output is
 `renders/`, `gt/`, `metrics.csv`, `metrics_summary.json`, and
 `reconstruction.mp4`.
 
+To continue that model to 30000 iterations while writing checkpoints at 10000,
+20000, and 30000, resume from the 3000-iteration checkpoint:
+
+```bash
+uv run python -m script.optimize \
+  --config configs/local/tva_nyx650_vggt_colmap_30000.yaml \
+  --save_iterations 10000 20000 30000 \
+  --test_iterations 999999 \
+  --start_checkpoint output/tva_nyx650_0501_vggt_colmap_fullish/chkpnt3000.pth
+```
+
+Then render the 30000-iteration checkpoint onto the same original camera
+trajectory and compute PSNR:
+
+```bash
+uv run python -m script.render_colmap_trajectory \
+  --config configs/local/tva_nyx650_vggt_colmap_30000.yaml \
+  --iteration 30000 \
+  --save_gt
+```
+
+The default output is
+`output/tva_nyx650_0501_vggt_colmap_30000/chkpnt30000_trajectory/`, including
+the reconstructed image sequence in `renders/`, reference frames in `gt/`,
+per-frame PSNR in `metrics.csv`, summary PSNR in `metrics_summary.json`, and
+`reconstruction.mp4`.
+
 ## Notes
 
 - The repository currently has no `docs/` directory on `main`; this document is

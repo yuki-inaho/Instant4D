@@ -133,7 +133,8 @@ class GaussianModel:
                 self._rotation_r,
                 self.rot_4d,
                 self.env_map,
-                self.active_sh_degree_t
+                self.active_sh_degree_t,
+                self.motion,
             )
     
     def restore(self, model_args, training_args):
@@ -151,25 +152,52 @@ class GaussianModel:
             opt_dict, 
             self.spatial_lr_scale) = model_args
         elif self.gaussian_dim == 4:
-            (self.active_sh_degree, 
-            self._xyz, 
-            self._features_dc, 
-            self._features_rest,
-            self._scaling, 
-            self._rotation, 
-            self._opacity,
-            self.max_radii2D, 
-            xyz_gradient_accum, 
-            t_gradient_accum,
-            denom,
-            opt_dict, 
-            self.spatial_lr_scale,
-            self._t,
-            self._scaling_t,
-            self._rotation_r,
-            self.rot_4d,
-            self.env_map,
-            self.active_sh_degree_t) = model_args
+            if len(model_args) == 19:
+                (self.active_sh_degree,
+                self._xyz,
+                self._features_dc,
+                self._features_rest,
+                self._scaling,
+                self._rotation,
+                self._opacity,
+                self.max_radii2D,
+                xyz_gradient_accum,
+                t_gradient_accum,
+                denom,
+                opt_dict,
+                self.spatial_lr_scale,
+                self._t,
+                self._scaling_t,
+                self._rotation_r,
+                self.rot_4d,
+                self.env_map,
+                self.active_sh_degree_t) = model_args
+                motion = torch.zeros((self._xyz.shape[0],), device=self._xyz.device, dtype=self._xyz.dtype)
+            elif len(model_args) == 20:
+                (self.active_sh_degree,
+                self._xyz,
+                self._features_dc,
+                self._features_rest,
+                self._scaling,
+                self._rotation,
+                self._opacity,
+                self.max_radii2D,
+                xyz_gradient_accum,
+                t_gradient_accum,
+                denom,
+                opt_dict,
+                self.spatial_lr_scale,
+                self._t,
+                self._scaling_t,
+                self._rotation_r,
+                self.rot_4d,
+                self.env_map,
+                self.active_sh_degree_t,
+                motion) = model_args
+                motion = motion.to(device=self._xyz.device, dtype=self._xyz.dtype).reshape(-1)
+            else:
+                raise ValueError(f"Unsupported 4D Gaussian checkpoint with {len(model_args)} fields")
+            self.motion = nn.Parameter(motion.requires_grad_(True))
         if training_args is not None:
             self.training_setup(training_args)
             self.xyz_gradient_accum = xyz_gradient_accum
